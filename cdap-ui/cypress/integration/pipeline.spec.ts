@@ -151,10 +151,10 @@ describe('Creating a pipeline', () => {
   it('does not run Preview when user clicks No on postrun action modal', () => {
     cy.window().then((window) => {
       skipPreviewTests = window.CDAP_CONFIG.hydrator.previewEnabled !== true;
+      if (skipPreviewTests) {
+        skip();
+      }
     });
-    if (skipPreviewTests) {
-      skip();
-    }
     cy.get('[data-cy="pipeline-preview-btn"]').click();
     cy.get('[data-cy="preview-top-run-btn"]').click();
     cy.get('[data-cy="run-preview-action-modal"]').should('be.visible');
@@ -166,10 +166,10 @@ describe('Creating a pipeline', () => {
   it('runs Preview when user clicks Yes on postrun action modal', () => {
     cy.window().then((window) => {
       skipPreviewTests = window.CDAP_CONFIG.hydrator.previewEnabled !== true;
+      if (skipPreviewTests) {
+        skip();
+      }
     });
-    if (skipPreviewTests) {
-      skip();
-    }
     // When user clicks Yes, Preview should fail to start and show banner about missing source and sink
     cy.get('[data-cy="preview-top-run-btn"]').click();
     cy.get('[data-cy="run-preview-action-modal"]').should('be.visible');

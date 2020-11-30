@@ -77,10 +77,10 @@ describe('Pipelines with plugins having more than one endpoints', () => {
   it('Should show preview data for multiple outputs for splitter and correct message for conditional', () => {
     cy.window().then((window) => {
       skipPreviewTests = window.CDAP_CONFIG.hydrator.previewEnabled !== true;
+      if (skipPreviewTests) {
+        skip();
+      }
     });
-    if (skipPreviewTests) {
-      skip();
-    }
     cy.get(Helpers.dataCy('pipeline-preview-btn')).click();
     cy.get(Helpers.dataCy('preview-top-run-btn')).click();
     cy.get(Helpers.dataCy('stop-preview-btn')).should('be.visible');

@@ -65,10 +65,10 @@ describe('Creating pipeline with macros ', () => {
     cy.visit('/pipelines/ns/default/studio');
     cy.window().then((window) => {
       skipPreviewTests = window.CDAP_CONFIG.hydrator.previewEnabled !== true;
+      if (skipPreviewTests) {
+        skip();
+      }
     });
-    if (skipPreviewTests) {
-      skip();
-    }
     cy.upload_pipeline(
       'pipeline_with_macros.json',
       '#pipeline-import-config-link > input[type="file"]'
