@@ -645,7 +645,7 @@ describe('Plugin Schema Editor', () => {
     });
   });
 
-  describe('Schema editor integration with wrangler', () => {
+  describe.only('Schema editor integration with wrangler', () => {
     /**
      * TODO: Once we add new tests for wrangler we should extract
      * this function out to be more generic.
@@ -701,9 +701,11 @@ describe('Plugin Schema Editor', () => {
         });
     };
     const applyDirectiveAndCreatePipeline = () => {
+      cy.wait(2000);
       cy.get('input[id="directive-input"]')
         .type('parse-as-csv :body , true')
         .type('{enter}');
+      cy.wait(2000);
       cy.contains('Create a Pipeline').click();
       return cy.contains('Batch pipeline').click();
     };
