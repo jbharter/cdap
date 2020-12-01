@@ -645,7 +645,7 @@ describe('Plugin Schema Editor', () => {
     });
   });
 
-  describe.only('Schema editor integration with wrangler', () => {
+  describe('Schema editor integration with wrangler', () => {
     /**
      * TODO: Once we add new tests for wrangler we should extract
      * this function out to be more generic.
@@ -727,6 +727,7 @@ describe('Plugin Schema Editor', () => {
             .contains('Transformation steps')
             .click();
           cy.get('[data-cy="directive-row-0"] [data-cy="delete-directive"]').click();
+          cy.get('[data-cy="loading-svg-centered"]').should('not.be.visible');
           cy.get('.action-buttons')
             .contains('Apply')
             .click();
