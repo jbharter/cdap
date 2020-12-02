@@ -1500,4 +1500,14 @@ public final class Constants {
      */
     public static final String UPDATE_ALLOWED = PREFIX + "update.allowed";
   }
+
+  /**
+   * Constants for capability management
+   */
+  public static final class Capability {
+    /**
+     * Internal config directory path key
+     */
+    public static final String DATA_DIR = "capability.data.dir";
+  }
 }

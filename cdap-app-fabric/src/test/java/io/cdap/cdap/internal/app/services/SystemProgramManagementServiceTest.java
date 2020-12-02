@@ -21,7 +21,6 @@ import io.cdap.cdap.AllProgramsApp;
 import io.cdap.cdap.api.artifact.ArtifactScope;
 import io.cdap.cdap.api.artifact.ArtifactSummary;
 import io.cdap.cdap.app.runtime.Arguments;
-import io.cdap.cdap.app.runtime.ProgramRuntimeService;
 import io.cdap.cdap.common.id.Id;
 import io.cdap.cdap.common.io.Locations;
 import io.cdap.cdap.common.test.AppJarHelper;
@@ -51,7 +50,6 @@ public class SystemProgramManagementServiceTest extends AppFabricTestBase {
 
   private static SystemProgramManagementService programManagementService;
   private static ProgramLifecycleService programLifecycleService;
-  private static ProgramRuntimeService programRuntimeService;
   private static ApplicationLifecycleService applicationLifecycleService;
   private static LocationFactory locationFactory;
   private static ArtifactRepository artifactRepository;
@@ -63,8 +61,7 @@ public class SystemProgramManagementServiceTest extends AppFabricTestBase {
   private static final Class<AllProgramsApp> APP_CLASS = AllProgramsApp.class;
 
   @BeforeClass
-  public static void setup() throws Exception {
-    programRuntimeService = getInjector().getInstance(ProgramRuntimeService.class);
+  public static void setup()  {
     programManagementService = getInjector().getInstance(SystemProgramManagementService.class);
     programLifecycleService = getInjector().getInstance(ProgramLifecycleService.class);
     applicationLifecycleService = getInjector().getInstance(ApplicationLifecycleService.class);
