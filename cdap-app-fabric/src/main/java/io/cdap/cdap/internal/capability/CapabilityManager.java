@@ -215,7 +215,7 @@ public class CapabilityManager extends AbstractIdleService {
       }
     }
     systemProgramManagementService.setProgramsEnabled(enabledPrograms);
-    enabledCapabilities.forEach(capability -> capabilityStatusMap.put(capability, CapabilityStatus.ENABLED));
+    enabledCapabilities.forEach(this::enableCapability);
   }
 
   /**
@@ -271,6 +271,11 @@ public class CapabilityManager extends AbstractIdleService {
                              metadataEntity.getValue(MetadataEntity.VERSION));
   }
 
+  private void enableCapability(String capability) {
+    capabilityStatusMap.put(capability, CapabilityStatus.ENABLED);
+    LOG.debug("Capability {} enabled.", capability);
+  }
+
   private void disableCapability(String capability) {
     //mark as disabled to prevent further runs
     capabilityStatusMap.put(capability, CapabilityStatus.DISABLED);
@@ -281,11 +286,12 @@ public class CapabilityManager extends AbstractIdleService {
       LOG.error("Stopping pipelines failed for capability {} with exception {}", capability, ex);
     }
     //programs(services) will be stopped by SystemProgramManagementService
+    LOG.debug("Capability {} disabled.", capability);
   }
 
   private void deleteCapability(CapabilityConfig capabilityConfig) {
     String capability = capabilityConfig.getCapability();
-    if (getStatus(capability) != CapabilityStatus.DISABLED) {
+    if (capabilityStatusMap.get(capability) == CapabilityStatus.ENABLED) {
       LOG.error("Deleting capability {} failed. Capability should be disabled before deleting.", capability);
       return;
     }
@@ -306,6 +312,7 @@ public class CapabilityManager extends AbstractIdleService {
       }
     }
     capabilityStatusMap.remove(capability);
+    LOG.debug("Capability {} deleted.", capability);
   }
 
   private void deletePipelines(String capability) throws Exception {

@@ -24,6 +24,7 @@ import io.cdap.cdap.app.runtime.Arguments;
 import io.cdap.cdap.common.id.Id;
 import io.cdap.cdap.common.io.Locations;
 import io.cdap.cdap.common.test.AppJarHelper;
+import io.cdap.cdap.internal.AppFabricTestHelper;
 import io.cdap.cdap.internal.app.runtime.BasicArguments;
 import io.cdap.cdap.internal.app.runtime.artifact.ArtifactRepository;
 import io.cdap.cdap.internal.app.services.http.AppFabricTestBase;
@@ -35,6 +36,7 @@ import io.cdap.cdap.proto.id.NamespaceId;
 import io.cdap.cdap.proto.id.ProgramId;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -61,12 +63,17 @@ public class SystemProgramManagementServiceTest extends AppFabricTestBase {
   private static final Class<AllProgramsApp> APP_CLASS = AllProgramsApp.class;
 
   @BeforeClass
-  public static void setup()  {
+  public static void setup() {
     programManagementService = getInjector().getInstance(SystemProgramManagementService.class);
     programLifecycleService = getInjector().getInstance(ProgramLifecycleService.class);
     applicationLifecycleService = getInjector().getInstance(ApplicationLifecycleService.class);
     locationFactory = getInjector().getInstance(LocationFactory.class);
     artifactRepository = getInjector().getInstance(ArtifactRepository.class);
+  }
+
+  @AfterClass
+  public static void stop() {
+    AppFabricTestHelper.shutdown();
   }
 
   @Test
