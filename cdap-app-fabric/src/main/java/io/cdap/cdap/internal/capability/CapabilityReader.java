@@ -28,10 +28,35 @@ import javax.annotation.Nullable;
  */
 public interface CapabilityReader {
 
+  /**
+   * Returns the status of capability.
+   *
+   * @param capability
+   * @return
+   * @throws IOException
+   */
   CapabilityStatus getStatus(String capability) throws IOException;
 
+  /**
+   * Return boolean indicating whether the capability is enabled
+   *
+   * @param capability
+   * @return
+   * @throws IOException
+   */
   boolean isEnabled(String capability) throws IOException;
 
+  /**
+   * Return applications that is associated with the capability
+   *
+   * @param namespace
+   * @param capability
+   * @param cursor
+   * @param offset
+   * @param limit
+   * @return
+   * @throws IOException
+   */
   EntityResult<ApplicationId> getApplications(NamespaceId namespace, String capability, @Nullable String cursor,
                                               int offset, int limit) throws IOException;
 

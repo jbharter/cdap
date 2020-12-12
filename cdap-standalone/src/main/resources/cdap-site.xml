@@ -291,4 +291,5 @@
       Default path to store replicator state and offsets
     </description>
   </property>
+
 </configuration>
