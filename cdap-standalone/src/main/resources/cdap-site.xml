@@ -291,13 +291,4 @@
       Default path to store replicator state and offsets
     </description>
   </property>
-
-  <!-- Capability settings -->
-  <property>
-    <name>capability.data.dir</name>
-    <value>${local.data.dir}/capability</value>
-    <description>
-      Internal directory that maintains the currently disabled and enabled configurations
-    </description>
-  </property>
 </configuration>

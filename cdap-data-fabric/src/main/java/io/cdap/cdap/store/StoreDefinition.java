@@ -68,6 +68,7 @@ public final class StoreDefinition {
     UsageStore.createTables(tableAdmin, overWrite);
     FieldLineageStore.createTables(tableAdmin, overWrite);
     LogFileMetaStore.createTables(tableAdmin, overWrite);
+    CapabilitiesStore.createTable(tableAdmin, overWrite);
   }
 
   public static void createAllTables(StructuredTableAdmin tableAdmin, StructuredTableRegistry registry)
@@ -1052,6 +1053,33 @@ public final class StoreDefinition {
                                     boolean overWrite) throws IOException, TableAlreadyExistsException {
       if (overWrite || tableAdmin.getSpecification(LOG_FILE_META) == null) {
         tableAdmin.create(LOG_FILE_META_SPEC);
+      }
+    }
+  }
+
+  /**
+   * Schema for Capabilities
+   */
+  public static final class CapabilitiesStore {
+    public static final StructuredTableId CAPABILITIES = new StructuredTableId("capabilities");
+
+    public static final String NAME_FIELD = "name";
+    public static final String STATUS_FIELD = "status";
+    public static final String UPDATED_TIME_FIELD = "updated_time";
+
+    public static final StructuredTableSpecification CAPABILITIES_TABLE_SPEC =
+      new StructuredTableSpecification.Builder()
+        .withId(CAPABILITIES)
+        .withFields(Fields.stringType(NAME_FIELD),
+                    Fields.stringType(STATUS_FIELD),
+                    Fields.longType(UPDATED_TIME_FIELD))
+        .withPrimaryKeys(NAME_FIELD)
+        .build();
+
+    public static void createTable(StructuredTableAdmin tableAdmin,
+                                   boolean overWrite) throws IOException, TableAlreadyExistsException {
+      if (overWrite || tableAdmin.getSpecification(CAPABILITIES) == null) {
+        tableAdmin.create(CAPABILITIES_TABLE_SPEC);
       }
     }
   }

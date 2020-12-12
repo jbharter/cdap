@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 /**
  * SearchClient for internal searching from metadata service
@@ -49,7 +48,6 @@ public class MetadataSearchClient {
   private static final Gson GSON = new Gson();
   private final RemoteClient remoteClient;
 
-  @Inject
   MetadataSearchClient(DiscoveryServiceClient discoveryClient) {
     this.remoteClient = new RemoteClient(discoveryClient, Constants.Service.METADATA_SERVICE,
                                          new DefaultHttpRequestConfig(false), Constants.Gateway.API_VERSION_3);

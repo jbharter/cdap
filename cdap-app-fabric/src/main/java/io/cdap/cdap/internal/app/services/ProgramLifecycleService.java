@@ -479,6 +479,19 @@ public class ProgramLifecycleService {
   }
 
   /**
+   * Stop all active programs for the given application
+   * @param applicationId
+   * @throws Exception
+   */
+  public void stopAll(ApplicationId applicationId) throws Exception {
+    Set<RunId> runs = new HashSet<>();
+    Map<ProgramRunId, RunRecordDetail> runMap = store.getActiveRuns(applicationId);
+    for (ProgramRunId programRunId : runMap.keySet()) {
+      stop(programRunId.getParent(), programRunId.getRun());
+    }
+  }
+
+  /**
    * Runs a Program without authorization.
    *
    * Note that this method should only be called through internal service, it does not have auth check for starting the
