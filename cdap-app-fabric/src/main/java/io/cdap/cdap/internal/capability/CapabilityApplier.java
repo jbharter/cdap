@@ -124,7 +124,7 @@ public class CapabilityApplier {
   private ProgramId getProgramId(SystemProgram program) {
     ApplicationId applicationId = new ApplicationId(program.getNamespace(), program.getApplication(),
                                                     program.getVersion());
-    return new ProgramId(applicationId, ProgramType.valueOf(program.getType()), program.getName());
+    return new ProgramId(applicationId, ProgramType.valueOf(program.getType().toUpperCase()), program.getName());
   }
 
   private void enableAllCapabilities(Set<String> enabledCapabilities) throws IOException {

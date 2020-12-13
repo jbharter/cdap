@@ -50,7 +50,9 @@ import javax.annotation.Nullable;
 public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter {
 
   private static final String CAPABILITY = "capability:%s";
+  private static final String CAPABILITY_KEY = "capability";
   private static final String APPLICATION = "application";
+  private static final String APPLICATION_TAG = "application:%s";
   private final MetadataSearchClient metadataSearchClient;
   private final TransactionRunner transactionRunner;
 
@@ -115,6 +117,12 @@ public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter
                               searchResponse.getTotal());
   }
 
+  /**
+   * Add or update capability
+   * @param capability
+   * @param status
+   * @throws IOException
+   */
   @Override
   public void addOrUpdateCapability(String capability, CapabilityStatus status) throws IOException {
     TransactionRunners.run(transactionRunner, context -> {
@@ -127,6 +135,11 @@ public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter
     }, IOException.class);
   }
 
+  /**
+   * Delete capability
+   * @param capability
+   * @throws IOException
+   */
   @Override
   public void deleteCapability(String capability) throws IOException {
     TransactionRunners.run(transactionRunner, context -> {
@@ -135,6 +148,35 @@ public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter
       fields.add(Fields.stringField(StoreDefinition.CapabilitiesStore.NAME_FIELD, capability));
       capabilityTable.delete(fields);
     }, IOException.class);
+  }
+
+  /**
+   * Returns boolean indicating whether application is disabled due to a disabled capability
+   *
+   * @param namespace
+   * @param applicationName
+   * @return
+   * @throws IOException
+   */
+  public boolean isApplicationEnabled(String namespace, String applicationName) throws IOException {
+    String applicationQuery = String.format(APPLICATION_TAG, applicationName);
+    SearchRequest searchRequest = SearchRequest.of(applicationQuery)
+      .addNamespace(namespace)
+      .addType(APPLICATION)
+      .setScope(MetadataScope.SYSTEM)
+      .build();
+    Set<MetadataSearchResultRecord> results = metadataSearchClient.search(searchRequest).getResults();
+    for (MetadataSearchResultRecord metadataRecord : results) {
+      String capability = metadataRecord.getMetadata().get(MetadataScope.SYSTEM).getProperties()
+        .get(CAPABILITY_KEY);
+      if (capability == null || capability.isEmpty()) {
+        continue;
+      }
+      if (!isEnabled(capability)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Nullable

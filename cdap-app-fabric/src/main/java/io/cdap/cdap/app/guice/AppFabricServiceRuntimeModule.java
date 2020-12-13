@@ -99,6 +99,7 @@ import io.cdap.cdap.internal.app.services.SystemProgramManagementService;
 import io.cdap.cdap.internal.app.store.DefaultStore;
 import io.cdap.cdap.internal.bootstrap.guice.BootstrapModules;
 import io.cdap.cdap.internal.capability.CapabilityApplier;
+import io.cdap.cdap.internal.capability.CapabilityManagementService;
 import io.cdap.cdap.internal.capability.CapabilityReader;
 import io.cdap.cdap.internal.capability.CapabilityStatusStore;
 import io.cdap.cdap.internal.capability.CapabilityWriter;
@@ -310,6 +311,7 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
       bind(CapabilityReader.class).to(CapabilityStatusStore.class);
       bind(CapabilityWriter.class).to(CapabilityStatusStore.class);
       bind(SystemProgramManagementService.class).in(Scopes.SINGLETON);
+      bind(CapabilityManagementService.class).in(Scopes.SINGLETON);
       bind(OwnerAdmin.class).to(DefaultOwnerAdmin.class);
       bind(CoreSchedulerService.class).in(Scopes.SINGLETON);
       bind(Scheduler.class).to(CoreSchedulerService.class);

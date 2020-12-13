@@ -82,6 +82,9 @@ public class SystemProgram {
    * @return {@link Map<String, String>} of runtime arguments
    */
   public Map<String, String> getArgs() {
+    if (args == null) {
+      return Collections.emptyMap();
+    }
     return args;
   }
 }

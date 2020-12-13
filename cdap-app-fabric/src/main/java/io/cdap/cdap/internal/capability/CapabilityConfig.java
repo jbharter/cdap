@@ -65,13 +65,19 @@ public class CapabilityConfig {
    * @return {@link List} of {@link SystemApplication} for this capability. Could be null.
    */
   public List<SystemApplication> getApplications() {
+    if (applications == null) {
+      return Collections.emptyList();
+    }
     return applications;
   }
 
   /**
-   * @return {@link List} of {@link SystemProgram} for this capability. Could be null.
+   * @return {@link List} of {@link SystemProgram} for this capability.
    */
   public List<SystemProgram> getPrograms() {
+    if (programs == null) {
+      return Collections.emptyList();
+    }
     return programs;
   }
 }

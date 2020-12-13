@@ -60,4 +60,11 @@ public interface CapabilityReader {
   EntityResult<ApplicationId> getApplications(NamespaceId namespace, String capability, @Nullable String cursor,
                                               int offset, int limit) throws IOException;
 
+  /**
+   *Returns boolean indicating whether the application is enabled
+   * @param namespace
+   * @param appNameWithCapability
+   * @return
+   */
+  boolean isApplicationEnabled(String namespace, String appNameWithCapability) throws IOException;
 }

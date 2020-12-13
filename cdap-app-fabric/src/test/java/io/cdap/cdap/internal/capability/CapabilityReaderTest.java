@@ -23,6 +23,7 @@ import io.cdap.cdap.api.annotation.Requirements;
 import io.cdap.cdap.common.id.Id;
 import io.cdap.cdap.common.io.Locations;
 import io.cdap.cdap.common.test.AppJarHelper;
+import io.cdap.cdap.internal.AppFabricTestHelper;
 import io.cdap.cdap.internal.app.runtime.artifact.ArtifactRepository;
 import io.cdap.cdap.internal.app.services.ApplicationLifecycleService;
 import io.cdap.cdap.internal.app.services.http.AppFabricTestBase;
@@ -32,6 +33,7 @@ import io.cdap.cdap.proto.id.ApplicationId;
 import io.cdap.cdap.proto.id.NamespaceId;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,6 +59,11 @@ public class CapabilityReaderTest extends AppFabricTestBase {
     capabilityReader = getInjector().getInstance(CapabilityReader.class);
     locationFactory = getInjector().getInstance(LocationFactory.class);
     artifactRepository = getInjector().getInstance(ArtifactRepository.class);
+  }
+
+  @AfterClass
+  public static void stop() {
+    AppFabricTestHelper.shutdown();
   }
 
   @Test
@@ -101,6 +108,8 @@ public class CapabilityReaderTest extends AppFabricTestBase {
       Assert.assertTrue(appsReturned.isEmpty());
     }
     applicationLifecycleService.removeApplication(NamespaceId.DEFAULT.app(appNameWithoutCapability, TEST_VERSION));
+    artifactRepository.deleteArtifact(
+      Id.Artifact.from(new Id.Namespace(NamespaceId.DEFAULT.getNamespace()), appNameWithoutCapability, TEST_VERSION));
   }
 
   @Test
@@ -130,6 +139,10 @@ public class CapabilityReaderTest extends AppFabricTestBase {
 
     applicationLifecycleService.removeApplication(NamespaceId.DEFAULT.app(appNameWithCapability1, TEST_VERSION));
     applicationLifecycleService.removeApplication(NamespaceId.DEFAULT.app(appNameWithCapability2, TEST_VERSION));
+    artifactRepository.deleteArtifact(
+      Id.Artifact.from(new Id.Namespace(NamespaceId.DEFAULT.getNamespace()), appNameWithCapability1, TEST_VERSION));
+    artifactRepository.deleteArtifact(
+      Id.Artifact.from(new Id.Namespace(NamespaceId.DEFAULT.getNamespace()), appNameWithCapability2, TEST_VERSION));
   }
 
   private void deployArtifactAndApp(Class<?> applicationClass, String appName) throws Exception {
