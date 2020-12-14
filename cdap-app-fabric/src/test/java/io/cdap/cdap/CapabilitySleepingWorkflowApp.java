@@ -17,6 +17,7 @@
 package io.cdap.cdap;
 
 import io.cdap.cdap.api.annotation.Property;
+import io.cdap.cdap.api.annotation.Requirements;
 import io.cdap.cdap.api.app.AbstractApplication;
 import io.cdap.cdap.api.customaction.AbstractCustomAction;
 import io.cdap.cdap.api.workflow.AbstractWorkflow;
@@ -26,10 +27,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Simple workflow, that sleeps inside a CustomAction, This class is used for testing the workflow status.
  */
-public class SleepingWorkflowApp extends AbstractApplication {
+@Requirements(capabilities = "healthcare")
+public class CapabilitySleepingWorkflowApp extends AbstractApplication {
 
-  public static final String NAME = "SleepWorkflowApp";
-  public static final String DESC = "SleepWorkflowApp";
+  public static final String NAME = "CapabilitySleepingWorkflowApp";
+  public static final String DESC = "CapabilitySleepingWorkflowApp";
 
   @Override
   public void configure() {

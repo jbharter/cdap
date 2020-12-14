@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import io.cdap.cdap.AllProgramsApp;
 import io.cdap.cdap.AppWithProgramsUsingGuava;
-import io.cdap.cdap.AppWithWorkflow;
+import io.cdap.cdap.CapabilityAppWithWorkflow;
 import io.cdap.cdap.MissingMapReduceWorkflowApp;
 import io.cdap.cdap.api.annotation.Requirements;
 import io.cdap.cdap.api.app.ApplicationSpecification;
@@ -158,7 +158,7 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
 
   @Test
   public void testCapabilityMetaDataDeletion() throws Exception {
-    Class<AppWithWorkflow> appWithWorkflowClass = AppWithWorkflow.class;
+    Class<CapabilityAppWithWorkflow> appWithWorkflowClass = CapabilityAppWithWorkflow.class;
     Requirements declaredAnnotation = appWithWorkflowClass.getDeclaredAnnotation(Requirements.class);
     Set<String> expected = Arrays.stream(declaredAnnotation.capabilities()).collect(Collectors.toSet());
     Id.Artifact artifactId = Id.Artifact

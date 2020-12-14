@@ -19,8 +19,8 @@ package io.cdap.cdap.internal.capability;
 import com.google.common.io.Files;
 import com.google.gson.JsonObject;
 import io.cdap.cdap.AllProgramsApp;
-import io.cdap.cdap.AppWithWorkflow;
-import io.cdap.cdap.SleepingWorkflowApp;
+import io.cdap.cdap.CapabilityAppWithWorkflow;
+import io.cdap.cdap.CapabilitySleepingWorkflowApp;
 import io.cdap.cdap.WorkflowAppWithFork;
 import io.cdap.cdap.api.annotation.Requirements;
 import io.cdap.cdap.api.artifact.ArtifactScope;
@@ -129,8 +129,8 @@ public class CapabilityApplierTest extends AppFabricTestBase {
 
   @Test
   public void testPluginCapabilityRefresh() throws Exception {
-    String appName = SleepingWorkflowApp.NAME;
-    Class<SleepingWorkflowApp> appClass = SleepingWorkflowApp.class;
+    String appName = CapabilitySleepingWorkflowApp.NAME;
+    Class<CapabilitySleepingWorkflowApp> appClass = CapabilitySleepingWorkflowApp.class;
     String version = "1.0.0";
     String namespace = "default";
     //deploy the artifact
@@ -156,7 +156,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
       programLifecycleService.start(program.getProgramId(), new HashMap<>(), false);
     }
     ProgramId programId = new ProgramId(applicationId, ProgramType.WORKFLOW,
-                                        SleepingWorkflowApp.SleepWorkflow.class.getSimpleName());
+                                        CapabilitySleepingWorkflowApp.SleepWorkflow.class.getSimpleName());
     assertProgramRuns(programId, ProgramRunStatus.RUNNING, 1);
     List<JsonObject> appList = getAppList(namespace);
     Assert.assertFalse(appList.isEmpty());
@@ -194,7 +194,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
   @Test
   public void testIsApplicationDisabled() throws Exception {
     //Deploy application with capability
-    Class<AppWithWorkflow> appWithWorkflowClass = AppWithWorkflow.class;
+    Class<CapabilityAppWithWorkflow> appWithWorkflowClass = CapabilityAppWithWorkflow.class;
     Requirements declaredAnnotation = appWithWorkflowClass.getDeclaredAnnotation(Requirements.class);
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);

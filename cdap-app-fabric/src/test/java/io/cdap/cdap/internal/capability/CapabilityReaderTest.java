@@ -17,7 +17,7 @@
 package io.cdap.cdap.internal.capability;
 
 import com.google.common.io.Files;
-import io.cdap.cdap.AppWithWorkflow;
+import io.cdap.cdap.CapabilityAppWithWorkflow;
 import io.cdap.cdap.WorkflowAppWithFork;
 import io.cdap.cdap.api.annotation.Requirements;
 import io.cdap.cdap.common.id.Id;
@@ -69,7 +69,7 @@ public class CapabilityReaderTest extends AppFabricTestBase {
   @Test
   public void testGetAppsWithCapability() throws Exception {
     //Deploy application with capability
-    Class<AppWithWorkflow> appWithWorkflowClass = AppWithWorkflow.class;
+    Class<CapabilityAppWithWorkflow> appWithWorkflowClass = CapabilityAppWithWorkflow.class;
     Requirements declaredAnnotation = appWithWorkflowClass.getDeclaredAnnotation(Requirements.class);
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
@@ -115,7 +115,7 @@ public class CapabilityReaderTest extends AppFabricTestBase {
   @Test
   public void testGetAppsForCapabilityPagination() throws Exception {
     //Deploy two applications with capability
-    Class<AppWithWorkflow> appWithWorkflowClass = AppWithWorkflow.class;
+    Class<CapabilityAppWithWorkflow> appWithWorkflowClass = CapabilityAppWithWorkflow.class;
     Requirements declaredAnnotation = appWithWorkflowClass.getDeclaredAnnotation(Requirements.class);
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
