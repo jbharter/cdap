@@ -50,6 +50,7 @@ public class CapabilityReaderTest extends AppFabricTestBase {
   private static ApplicationLifecycleService applicationLifecycleService;
   private static ArtifactRepository artifactRepository;
   private static CapabilityReader capabilityReader;
+  private static CapabilityWriter capabilityWriter;
   private static LocationFactory locationFactory;
   public static final String TEST_VERSION = "1.0.0";
 
@@ -57,6 +58,7 @@ public class CapabilityReaderTest extends AppFabricTestBase {
   public static void setup() {
     applicationLifecycleService = getInjector().getInstance(ApplicationLifecycleService.class);
     capabilityReader = getInjector().getInstance(CapabilityReader.class);
+    capabilityWriter = getInjector().getInstance(CapabilityWriter.class);
     locationFactory = getInjector().getInstance(LocationFactory.class);
     artifactRepository = getInjector().getInstance(ArtifactRepository.class);
   }
@@ -74,6 +76,9 @@ public class CapabilityReaderTest extends AppFabricTestBase {
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
     String appNameWithCapabilities = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
+    for (String capability : declaredAnnotation.capabilities()) {
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+    }
     deployArtifactAndApp(appWithWorkflowClass, appNameWithCapabilities);
 
     //Deploy application without capability
@@ -120,6 +125,9 @@ public class CapabilityReaderTest extends AppFabricTestBase {
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
     String appNameWithCapability1 = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
+    for (String capability : declaredAnnotation.capabilities()) {
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+    }
     deployArtifactAndApp(appWithWorkflowClass, appNameWithCapability1);
     String appNameWithCapability2 = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
     deployArtifactAndApp(appWithWorkflowClass, appNameWithCapability2);
