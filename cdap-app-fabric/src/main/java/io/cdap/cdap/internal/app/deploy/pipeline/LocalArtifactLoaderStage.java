@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.cdap.cdap.api.app.ApplicationSpecification;
+import io.cdap.cdap.api.plugin.Plugin;
 import io.cdap.cdap.app.deploy.ConfigResponse;
 import io.cdap.cdap.app.store.Store;
 import io.cdap.cdap.common.conf.CConfiguration;
@@ -30,6 +31,8 @@ import io.cdap.cdap.internal.app.deploy.InMemoryConfigurator;
 import io.cdap.cdap.internal.app.deploy.LocalApplicationManager;
 import io.cdap.cdap.internal.app.runtime.artifact.ArtifactRepository;
 import io.cdap.cdap.internal.app.runtime.artifact.PluginFinder;
+import io.cdap.cdap.internal.capability.CapabilityNotAvailableException;
+import io.cdap.cdap.internal.capability.CapabilityReader;
 import io.cdap.cdap.pipeline.AbstractStage;
 import io.cdap.cdap.pipeline.Context;
 import io.cdap.cdap.pipeline.Pipeline;
@@ -43,6 +46,8 @@ import io.cdap.cdap.security.spi.authentication.AuthenticationContext;
 import io.cdap.cdap.security.spi.authorization.AuthorizationEnforcer;
 import org.apache.twill.filesystem.Location;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -64,13 +69,15 @@ public class LocalArtifactLoaderStage extends AbstractStage<AppDeploymentInfo> {
   private final AuthorizationEnforcer authorizationEnforcer;
   private final AuthenticationContext authenticationContext;
   private final PluginFinder pluginFinder;
+  private final CapabilityReader capabilityReader;
 
   /**
    * Constructor with hit for handling type.
    */
   public LocalArtifactLoaderStage(CConfiguration cConf, Store store, ArtifactRepository artifactRepository,
                                   Impersonator impersonator, AuthorizationEnforcer authorizationEnforcer,
-                                  AuthenticationContext authenticationContext, PluginFinder pluginFinder) {
+                                  AuthenticationContext authenticationContext, PluginFinder pluginFinder,
+                                  CapabilityReader capabilityReader) {
     super(TypeToken.of(AppDeploymentInfo.class));
     this.cConf = cConf;
     this.store = store;
@@ -79,6 +86,7 @@ public class LocalArtifactLoaderStage extends AbstractStage<AppDeploymentInfo> {
     this.authorizationEnforcer = authorizationEnforcer;
     this.authenticationContext = authenticationContext;
     this.pluginFinder = pluginFinder;
+    this.capabilityReader = capabilityReader;
   }
 
   /**
@@ -124,6 +132,14 @@ public class LocalArtifactLoaderStage extends AbstractStage<AppDeploymentInfo> {
       applicationId = deploymentInfo.getNamespaceId().app(specification.getName(), appVersion);
     }
     authorizationEnforcer.enforce(applicationId, authenticationContext.getPrincipal(), Action.ADMIN);
+    for (Map.Entry<String, Plugin> pluginEntry : specification.getPlugins().entrySet()) {
+      Set<String> capabilities = pluginEntry.getValue().getPluginClass().getRequirements().getCapabilities();
+      for (String capability : capabilities) {
+        if (!capabilityReader.isEnabled(capability)) {
+          throw new CapabilityNotAvailableException(capability);
+        }
+      }
+    }
     emit(new ApplicationDeployable(deploymentInfo.getArtifactId(), deploymentInfo.getArtifactLocation(),
                                    applicationId, specification, store.getApplication(applicationId),
                                    ApplicationDeployScope.USER, deploymentInfo.getApplicationClass(),

@@ -34,6 +34,7 @@ import io.cdap.cdap.internal.app.runtime.schedule.queue.JobQueueTable;
 import io.cdap.cdap.internal.app.runtime.schedule.store.ProgramScheduleStoreDataset;
 import io.cdap.cdap.internal.app.runtime.schedule.store.Schedulers;
 import io.cdap.cdap.internal.app.services.AbstractNotificationSubscriberService;
+import io.cdap.cdap.internal.capability.CapabilityNotAvailableException;
 import io.cdap.cdap.internal.capability.CapabilityReader;
 import io.cdap.cdap.messaging.MessagingService;
 import io.cdap.cdap.proto.Notification;
@@ -203,9 +204,11 @@ public class ScheduleNotificationSubscriberService extends AbstractIdleService {
         scheduleId = ScheduleId.fromString(scheduleIdString);
       }
 
-      if (!capabilityReader.isApplicationEnabled(scheduleId.getNamespace(), scheduleId.getApplication())) {
-        LOG.debug("Application {}.{} is not enabled, ignoring the schedule {}.", scheduleId.getNamespace(),
-                  scheduleId.getApplication(), scheduleId.getSchedule());
+      try {
+        capabilityReader.ensureApplicationEnabled(scheduleId.getNamespace(), scheduleId.getApplication());
+      } catch (CapabilityNotAvailableException ex) {
+        LOG.debug("Schedule {} ignored for Application {}.{} due to exception.", scheduleId.getSchedule(),
+                  scheduleId.getNamespace(), scheduleId.getApplication(), ex);
         return;
       }
 
@@ -277,11 +280,11 @@ public class ScheduleNotificationSubscriberService extends AbstractIdleService {
       }
 
       ProgramRunId programRunId = GSON.fromJson(programRunIdString, ProgramRunId.class);
-      if (!capabilityReader
-        .isApplicationEnabled(programRunId.getNamespaceId().getNamespace(), programRunId.getApplication())) {
-        LOG.debug("Application {}.{} is not enabled, ignoring the schedule for program {}.",
-                  programRunId.getNamespaceId().getNamespace(),
-                  programRunId.getApplication(), programRunId.getProgram());
+      try {
+        capabilityReader
+          .ensureApplicationEnabled(programRunId.getNamespaceId().getNamespace(), programRunId.getApplication());
+      } catch (CapabilityNotAvailableException ex) {
+        LOG.debug("Schedule ignored for program {} due to exception.", programRunId.getProgram(), ex);
         return;
       }
 

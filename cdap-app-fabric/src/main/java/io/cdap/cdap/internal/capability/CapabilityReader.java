@@ -61,10 +61,12 @@ public interface CapabilityReader {
                                               int offset, int limit) throws IOException;
 
   /**
-   *Returns boolean indicating whether the application is enabled
+   * Throws an exception if application is associated with disabled capability
+   *
    * @param namespace
    * @param appNameWithCapability
-   * @return
    */
-  boolean isApplicationEnabled(String namespace, String appNameWithCapability) throws IOException;
+  void ensureApplicationEnabled(String namespace, String appNameWithCapability)
+    throws IOException, CapabilityNotAvailableException;
+
 }

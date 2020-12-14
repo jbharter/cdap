@@ -141,7 +141,7 @@ public class CapabilityApplier {
     try {
       stopAllPrograms(capability);
     } catch (Exception ex) {
-      LOG.error("Stopping programs failed for capability {} with exception {}", capability, ex);
+      LOG.error("Stopping programs failed for capability {} with exception.", capability, ex);
     }
     //programs(services) will be stopped by SystemProgramManagementService
     LOG.debug("Capability {} disabled.", capability);
@@ -157,7 +157,7 @@ public class CapabilityApplier {
     try {
       deleteAllApps(capability);
     } catch (Exception ex) {
-      LOG.error("Deleting programs failed for capability {} with exception {}", capability, ex);
+      LOG.error("Deleting programs failed for capability {} with exception.", capability, ex);
     }
     //delete applications
     for (SystemApplication application : capabilityConfig.getApplications()) {
@@ -166,7 +166,7 @@ public class CapabilityApplier {
       try {
         applicationLifecycleService.removeApplication(applicationId);
       } catch (Exception exception) {
-        LOG.error("Deleting application {} failed with exception {}", applicationId, exception);
+        LOG.error("Deleting application {} failed with exception.", applicationId, exception);
       }
     }
     capabilityWriter.deleteCapability(capability);

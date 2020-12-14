@@ -53,6 +53,7 @@ import io.cdap.cdap.internal.app.runtime.ProgramOptionConstants;
 import io.cdap.cdap.internal.app.runtime.SimpleProgramOptions;
 import io.cdap.cdap.internal.app.runtime.SystemArguments;
 import io.cdap.cdap.internal.app.store.RunRecordDetail;
+import io.cdap.cdap.internal.capability.CapabilityReader;
 import io.cdap.cdap.internal.pipeline.PluginRequirement;
 import io.cdap.cdap.internal.profile.ProfileService;
 import io.cdap.cdap.internal.provision.ProvisionerNotifier;
@@ -129,6 +130,7 @@ public class ProgramLifecycleService {
   private final ProvisionerNotifier provisionerNotifier;
   private final ProvisioningService provisioningService;
   private final ProgramStateWriter programStateWriter;
+  private final CapabilityReader capabilityReader;
   private final int maxConcurrentRuns;
 
   @Inject
@@ -138,7 +140,7 @@ public class ProgramLifecycleService {
                           PreferencesService preferencesService, AuthorizationEnforcer authorizationEnforcer,
                           AuthenticationContext authenticationContext,
                           ProvisionerNotifier provisionerNotifier, ProvisioningService provisioningService,
-                          ProgramStateWriter programStateWriter) {
+                          ProgramStateWriter programStateWriter, CapabilityReader capabilityReader) {
     this.maxConcurrentRuns = cConf.getInt(Constants.AppFabric.MAX_CONCURRENT_RUNS);
     this.store = store;
     this.profileService = profileService;
@@ -150,6 +152,7 @@ public class ProgramLifecycleService {
     this.provisionerNotifier = provisionerNotifier;
     this.provisioningService = provisioningService;
     this.programStateWriter = programStateWriter;
+    this.capabilityReader = capabilityReader;
   }
 
   /**
@@ -585,6 +588,7 @@ public class ProgramLifecycleService {
    */
   public ProgramController start(ProgramId programId, Map<String, String> overrides, boolean debug) throws Exception {
     authorizationEnforcer.enforce(programId, authenticationContext.getPrincipal(), Action.EXECUTE);
+    capabilityReader.ensureApplicationEnabled(programId.getNamespace(), programId.getApplication());
     checkConcurrentExecution(programId);
 
     Map<String, String> sysArgs = propertiesResolver.getSystemProperties(programId);

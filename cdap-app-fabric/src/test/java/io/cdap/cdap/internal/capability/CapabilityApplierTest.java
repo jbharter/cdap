@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -156,10 +155,11 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     for (ProgramDescriptor program : programs) {
       programLifecycleService.start(program.getProgramId(), new HashMap<>(), false);
     }
-
     ProgramId programId = new ProgramId(applicationId, ProgramType.WORKFLOW,
                                         SleepingWorkflowApp.SleepWorkflow.class.getSimpleName());
     assertProgramRuns(programId, ProgramRunStatus.RUNNING, 1);
+    List<JsonObject> appList = getAppList(namespace);
+    Assert.assertFalse(appList.isEmpty());
 
     //disable the capability -  the program that was started should stop
     CapabilityConfig disabledConfig = new CapabilityConfig("Disable healthcare", CapabilityActionType.DISABLE.name(),
@@ -169,6 +169,15 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     assertProgramRuns(programId, ProgramRunStatus.KILLED, 1);
     assertProgramRuns(programId, ProgramRunStatus.RUNNING, 0);
     Assert.assertFalse(capabilityReader.isEnabled(capability));
+    //try starting programs
+    for (ProgramDescriptor program : programs) {
+      try {
+        programLifecycleService.start(program.getProgramId(), new HashMap<>(), false);
+      } catch (CapabilityNotAvailableException ex) {
+        //expecting exception
+      }
+    }
+    Assert.assertTrue(getAppList(namespace).isEmpty());
 
     //delete the capability
     CapabilityConfig deleteConfig = new CapabilityConfig("Delete healthcare", CapabilityActionType.DELETE.name(),
@@ -176,7 +185,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
                                                          Collections.emptyList());
     capabilityApplier.apply(Collections.singletonList(deleteConfig));
     Assert.assertNull(capabilityReader.getStatus(capability));
-    List<JsonObject> appList = getAppList(namespace);
+    appList = getAppList(namespace);
     Assert.assertTrue(appList.isEmpty());
     artifactRepository.deleteArtifact(Id.Artifact
                                         .from(new Id.Namespace(namespace), appName, version));
@@ -190,7 +199,12 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     //verify this app has capabilities
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
     String appNameWithCapability = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
-    deployArtifactAndApp(appWithWorkflowClass, appNameWithCapability);
+    try {
+      deployArtifactAndApp(appWithWorkflowClass, appNameWithCapability);
+      Assert.fail("Expecting exception");
+    } catch (CapabilityNotAvailableException ex) {
+      //expected
+    }
 
     //Deploy application without capability
     Class<WorkflowAppWithFork> appNoCapabilityClass = WorkflowAppWithFork.class;
@@ -200,13 +214,9 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     String appNameWithOutCapability = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
     deployArtifactAndApp(appNoCapabilityClass, appNameWithOutCapability);
 
-    boolean applicationEnabled = capabilityReader
-      .isApplicationEnabled(NamespaceId.DEFAULT.getNamespace(), appNameWithCapability);
-    Assert.assertFalse(applicationEnabled);
     //applications with no capabilities should not be disabled
-    applicationEnabled = capabilityReader
-      .isApplicationEnabled(NamespaceId.DEFAULT.getNamespace(), appNameWithOutCapability);
-    Assert.assertTrue(applicationEnabled);
+    capabilityReader
+      .ensureApplicationEnabled(NamespaceId.DEFAULT.getNamespace(), appNameWithOutCapability);
 
     //enable the capabilities
     List<CapabilityConfig> capabilityConfigs = Arrays.stream(declaredAnnotation.capabilities())
@@ -215,9 +225,15 @@ public class CapabilityApplierTest extends AppFabricTestBase {
       .collect(Collectors.toList());
     capabilityApplier.apply(capabilityConfigs);
 
-    applicationEnabled = capabilityReader
-      .isApplicationEnabled(NamespaceId.DEFAULT.getNamespace(), appNameWithCapability);
-    Assert.assertTrue(applicationEnabled);
+    //deployment should go through now
+    Id.Artifact artifactId = Id.Artifact
+      .from(Id.Namespace.DEFAULT, appNameWithCapability, TEST_VERSION);
+    applicationLifecycleService
+      .deployApp(NamespaceId.DEFAULT, appNameWithCapability, TEST_VERSION, artifactId,
+                 null, programId -> {
+        });
+    capabilityReader
+      .ensureApplicationEnabled(NamespaceId.DEFAULT.getNamespace(), appNameWithCapability);
 
     applicationLifecycleService.removeApplication(NamespaceId.DEFAULT.app(appNameWithCapability, TEST_VERSION));
     applicationLifecycleService.removeApplication(NamespaceId.DEFAULT.app(appNameWithOutCapability, TEST_VERSION));

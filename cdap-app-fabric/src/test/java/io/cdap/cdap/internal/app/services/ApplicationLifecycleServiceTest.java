@@ -39,6 +39,9 @@ import io.cdap.cdap.internal.app.deploy.ProgramTerminator;
 import io.cdap.cdap.internal.app.deploy.Specifications;
 import io.cdap.cdap.internal.app.runtime.artifact.ArtifactRepository;
 import io.cdap.cdap.internal.app.services.http.AppFabricTestBase;
+import io.cdap.cdap.internal.capability.CapabilityNotAvailableException;
+import io.cdap.cdap.internal.capability.CapabilityStatus;
+import io.cdap.cdap.internal.capability.CapabilityWriter;
 import io.cdap.cdap.metadata.MetadataSubscriberService;
 import io.cdap.cdap.proto.ApplicationDetail;
 import io.cdap.cdap.proto.NamespaceMeta;
@@ -76,6 +79,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 /**
+ *
  */
 public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
 
@@ -84,6 +88,7 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
   private static ArtifactRepository artifactRepository;
   private static MetadataStorage metadataStorage;
   private static MetadataSubscriberService metadataSubscriber;
+  private static CapabilityWriter capabilityWriter;
 
   @BeforeClass
   public static void setup() throws Exception {
@@ -92,6 +97,7 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
     artifactRepository = getInjector().getInstance(ArtifactRepository.class);
     metadataStorage = getInjector().getInstance(MetadataStorage.class);
     metadataSubscriber = getInjector().getInstance(MetadataSubscriberService.class);
+    capabilityWriter = getInjector().getInstance(CapabilityWriter.class);
   }
 
   @AfterClass
@@ -112,7 +118,8 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
 
     try {
       applicationLifecycleService.deployAppAndArtifact(NamespaceId.DEFAULT, "appName", artifactId, appJarFile, null,
-                                                       null, programId -> { }, true);
+                                                       null, programId -> {
+        }, true);
       Assert.fail("expected application deployment to fail.");
     } catch (Exception e) {
       // expected
@@ -161,10 +168,24 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
                                String.format("%s-%s.jar", artifactId.getName(), artifactId.getVersion().getVersion()));
     Files.copy(Locations.newInputSupplier(appJar), appJarFile);
     appJar.delete();
+
     //deploy app
+    try {
+      applicationLifecycleService
+        .deployAppAndArtifact(NamespaceId.DEFAULT, appWithWorkflowClass.getSimpleName(), artifactId, appJarFile, null,
+                              null, programId -> {
+          }, true);
+      Assert.fail("Expecting exception");
+    } catch (CapabilityNotAvailableException ex) {
+      //expected
+    }
+    for (String capability : declaredAnnotation.capabilities()) {
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+    }
     applicationLifecycleService
       .deployAppAndArtifact(NamespaceId.DEFAULT, appWithWorkflowClass.getSimpleName(), artifactId, appJarFile, null,
-                            null, programId -> { }, true);
+                            null, programId -> {
+        }, true);
     //Check for the capability metadata
     ApplicationId appId = NamespaceId.DEFAULT.app(appWithWorkflowClass.getSimpleName());
     Assert.assertEquals(false, metadataStorage.read(new Read(appId.toMetadataEntity(),
@@ -265,11 +286,11 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
     applicationLifecycleService.deployAppAndArtifact(NamespaceId.DEFAULT, "appName",
                                                      Id.Artifact.fromEntityId(artifactId), appJarFile,
                                                      null, null, new ProgramTerminator() {
-      @Override
-      public void stop(ProgramId programId) throws Exception {
-        // no-op
-      }
-    }, true);
+        @Override
+        public void stop(ProgramId programId) throws Exception {
+          // no-op
+        }
+      }, true);
 
     ApplicationId appId = NamespaceId.DEFAULT.app("appName");
 

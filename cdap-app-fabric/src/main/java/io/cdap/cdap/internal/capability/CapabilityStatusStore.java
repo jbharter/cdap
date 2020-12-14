@@ -155,10 +155,10 @@ public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter
    *
    * @param namespace
    * @param applicationName
-   * @return
    * @throws IOException
    */
-  public boolean isApplicationEnabled(String namespace, String applicationName) throws IOException {
+  public void ensureApplicationEnabled(String namespace, String applicationName)
+    throws IOException, CapabilityNotAvailableException {
     String applicationQuery = String.format(APPLICATION_TAG, applicationName);
     SearchRequest searchRequest = SearchRequest.of(applicationQuery)
       .addNamespace(namespace)
@@ -173,10 +173,9 @@ public class CapabilityStatusStore implements CapabilityReader, CapabilityWriter
         continue;
       }
       if (!isEnabled(capability)) {
-        return false;
+        throw new CapabilityNotAvailableException(capability);
       }
     }
-    return true;
   }
 
   @Nullable
