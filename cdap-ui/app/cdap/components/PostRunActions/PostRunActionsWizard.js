@@ -105,6 +105,7 @@ export default class PostRunActionsWizard extends Component {
         toggle={this.toggleAndPreventPropagation}
         backdrop="static"
         modalClassName="post-run-actions-modal hydrator-modal node-config-modal"
+        zIndex={1301} // Workaround for material-ui PipelineModeless
       >
         {/* Not using <ModalHeader> here because it wraps the entire header in an h4 */}
         <div className="modal-header">
