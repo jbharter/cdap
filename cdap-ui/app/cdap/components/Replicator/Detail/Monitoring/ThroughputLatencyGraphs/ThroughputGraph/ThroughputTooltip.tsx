@@ -53,6 +53,9 @@ const styles = (theme): StyleRules => {
     deletes: {
       backgroundColor: COLOR_MAP.deletes,
     },
+    errors: {
+      backgroundColor: COLOR_MAP.error,
+    },
   };
 };
 
@@ -99,6 +102,12 @@ const ThroughputTooltipView: React.FC<IThroughputTooltipProps> = ({ classes, too
           <div className={`${classes.square} ${classes.inserts}`} />
           <span>Inserts:</span>
           <span>{tooltipData.inserts}</span>
+        </div>
+
+        <div className={classes.metricContent}>
+          <div className={`${classes.square} ${classes.errors}`} />
+          <span>Errors:</span>
+          <span>{tooltipData.errors}</span>
         </div>
       </div>
     </div>

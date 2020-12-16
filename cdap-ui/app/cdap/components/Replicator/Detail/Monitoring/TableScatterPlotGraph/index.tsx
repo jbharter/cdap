@@ -46,8 +46,8 @@ const styles = (): StyleRules => {
       paddingLeft: '30px',
 
       '& > div': {
-        marginRight: '25px',
-        width: '50px',
+        marginRight: '15px',
+        width: '65px',
         textAlign: 'center',
       },
     },
@@ -65,6 +65,10 @@ const styles = (): StyleRules => {
     inactiveTable: {
       backgroundColor: COLOR_MAP.inactive,
       borderColor: COLOR_MAP.inactiveOutline,
+    },
+    errorTable: {
+      backgroundColor: COLOR_MAP.error,
+      borderColor: COLOR_MAP.errorOutline,
     },
   };
 };
@@ -150,6 +154,10 @@ const TableScatterPlotGraphView: React.FC<WithStyles<typeof styles>> = ({ classe
         <div>
           <div className={`${classes.circle} ${classes.inactiveTable}`} />
           <div>Inactive table</div>
+        </div>
+        <div>
+          <div className={`${classes.circle} ${classes.errorTable}`} />
+          <div>Table with errors</div>
         </div>
       </div>
     </React.Fragment>

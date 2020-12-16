@@ -34,17 +34,19 @@ const styles = (): StyleRules => {
 
 const OffsetBasePathEditor = ({ onChange, value }) => {
   const widget = {
-    label: 'Offset base path',
+    label: 'Checkpoint directory',
     name: 'offset',
     'widget-type': 'textbox',
     'widget-attributes': {
-      placeholder: 'Path for offset storage location',
+      placeholder: 'Path for checkpoint storage location',
     },
   };
 
   const property = {
     required: false,
     name: 'offset',
+    description:
+      'This is the directory where checkpoints for the replication pipeline are stored, so the pipeline can resume from a previous checkpoint, instead of starting from the beginning if it is restarted.',
   };
 
   return (
@@ -59,7 +61,7 @@ const OffsetBasePathEditor = ({ onChange, value }) => {
 
 const NumInstancesEditor = ({ onChange, value }) => {
   const widget = {
-    label: 'Number of instances',
+    label: 'Number of tasks',
     name: 'numInstance',
     'widget-type': 'number',
     'widget-attributes': {
@@ -70,6 +72,8 @@ const NumInstancesEditor = ({ onChange, value }) => {
   const property = {
     required: true,
     name: 'numInstance',
+    description:
+      'The tables in a replication pipeline are evenly distributed amongst all the tasks. Set this to a higher number to distribute the load amongst a larger number of tasks, thereby increasing the parallelism of the replication pipeline. This value cannot be changed after the pipeline is created.',
   };
 
   function handleChange(val) {
@@ -101,15 +105,16 @@ const AdvancedView: React.FC<ICreateContext & WithStyles<typeof styles>> = ({
 
   return (
     <div className={classes.root}>
-      <Heading type={HeadingTypes.h3} label="Advanced" />
+      <Heading type={HeadingTypes.h3} label="Configure optional properties" />
       <br />
 
-      <OffsetBasePathEditor value={localOffset} onChange={setLocalOffset} />
-
-      <br />
       <div className={classes.numInstances}>
         <NumInstancesEditor value={localNumInstances} onChange={setLocalNumInstances} />
       </div>
+
+      <br />
+
+      <OffsetBasePathEditor value={localOffset} onChange={setLocalOffset} />
 
       <StepButtons onNext={handleNext} />
     </div>

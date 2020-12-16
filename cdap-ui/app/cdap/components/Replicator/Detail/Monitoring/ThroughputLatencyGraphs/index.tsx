@@ -30,6 +30,7 @@ const styles = (): StyleRules => {
     root: {
       display: 'grid',
       gridTemplateColumns: '50% 50%',
+      paddingBottom: '25px',
 
       '& > div': {
         padding: '0 15px',
