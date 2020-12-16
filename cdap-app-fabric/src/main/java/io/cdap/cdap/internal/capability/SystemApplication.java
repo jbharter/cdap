@@ -16,9 +16,11 @@
 
 package io.cdap.cdap.internal.capability;
 
+import com.google.gson.JsonObject;
 import io.cdap.cdap.api.artifact.ArtifactSummary;
 import org.json.JSONObject;
 
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -30,10 +32,10 @@ public class SystemApplication {
   private final String name;
   private final String version;
   private final ArtifactSummary artifact;
-  private final JSONObject config;
+  private final JsonObject config;
 
   public SystemApplication(String namespace, String applicationName, @Nullable String version,
-                           ArtifactSummary artifact, @Nullable JSONObject config) {
+                           ArtifactSummary artifact, @Nullable JsonObject config) {
     this.namespace = namespace;
     this.name = applicationName;
     this.version = version;
@@ -74,7 +76,28 @@ public class SystemApplication {
    * @return {@link JSONObject} configuration
    */
   @Nullable
-  public JSONObject getConfig() {
+  public JsonObject getConfig() {
     return config;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (other == null || getClass() != other.getClass()) {
+      return false;
+    }
+    SystemApplication otherApplication = (SystemApplication) other;
+    return Objects.equals(namespace, otherApplication.namespace) &&
+      Objects.equals(name, otherApplication.name) &&
+      Objects.equals(version, otherApplication.version) &&
+      Objects.equals(artifact, otherApplication.artifact) &&
+      Objects.equals(config, otherApplication.config);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(namespace, name, version, artifact, config);
   }
 }

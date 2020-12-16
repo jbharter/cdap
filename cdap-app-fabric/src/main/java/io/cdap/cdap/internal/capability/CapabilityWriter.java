@@ -30,7 +30,7 @@ public interface CapabilityWriter {
    * @param status
    * @throws IOException
    */
-  void addOrUpdateCapability(String capability, CapabilityStatus status) throws IOException;
+  void addOrUpdateCapability(String capability, CapabilityStatus status, CapabilityConfig config) throws IOException;
 
   /**
    * Delete this capability
@@ -39,5 +39,22 @@ public interface CapabilityWriter {
    * @throws IOException
    */
   void deleteCapability(String capability) throws IOException;
+
+  /**
+   * Add or update capability operation
+   * @param capability
+   * @param actionType
+   * @param config
+   * @throws IOException
+   */
+  void addOrUpdateCapabilityOperation(String capability, CapabilityAction actionType,
+                                      CapabilityConfig config) throws IOException;
+
+  /**
+   * Delete capability operation
+   * @param capability
+   * @throws IOException
+   */
+  void deleteCapabilityOperation(String capability) throws IOException;
 
 }

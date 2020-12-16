@@ -32,9 +32,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -48,8 +46,6 @@ public class CapabilityManagementService extends AbstractRetryableScheduledServi
   private final CConfiguration cConf;
   private final CapabilityApplier capabilityApplier;
   private final SystemProgramManagementService systemProgramManagementService;
-  private final Map<String, Long> configModifiedTimeMap;
-  private final Map<String, Long> configApplyTimeMap;
 
   @Inject
   CapabilityManagementService(CConfiguration cConf, CapabilityApplier capabilityApplier,
@@ -61,8 +57,6 @@ public class CapabilityManagementService extends AbstractRetryableScheduledServi
     this.systemProgramManagementService = systemProgramManagementService;
     this.scheduleIntervalInMillis = TimeUnit.MINUTES
       .toMillis(cConf.getLong(Constants.Capability.DIR_SCAN_INTERVAL_MINUTES));
-    this.configModifiedTimeMap = new HashMap<>();
-    this.configApplyTimeMap = new HashMap<>();
   }
 
   @Override
@@ -88,31 +82,13 @@ public class CapabilityManagementService extends AbstractRetryableScheduledServi
 
   private List<CapabilityConfig> scanConfigDirectory() throws IOException {
     File configDir = new File(cConf.get(Constants.Capability.CONFIG_DIR));
-    //timeout for repeatedly applying
-    long applyTimeoutInMillis = TimeUnit.MINUTES.toMillis(cConf.getLong(Constants.Capability.APPLY_TIMEOUT_MINUTES));
-    long currentTimeMillis = System.currentTimeMillis();
     List<CapabilityConfig> allConfigs = new ArrayList<>();
     for (File configFile : DirUtils.listFiles(configDir)) {
-      if (!shouldApply(configFile, currentTimeMillis, applyTimeoutInMillis)) {
-        LOG.debug("Exceeded timeout for repeatedly applying config {} ", configFile.getName());
-        continue;
-      }
       try (Reader reader = new FileReader(configFile)) {
         CapabilityConfig capabilityConfig = GSON.fromJson(reader, CapabilityConfig.class);
         allConfigs.add(capabilityConfig);
       }
     }
     return allConfigs;
-  }
-
-  private boolean shouldApply(File configFile, long currentTimeMillis, long applyTimeoutMillis) {
-    //Always apply after "seeing" file for first time (may have seen before restart of service) till apply timeout
-    String configFileName = configFile.getName();
-    if (!configModifiedTimeMap.containsKey(configFileName)) {
-      configModifiedTimeMap.put(configFileName, configFile.lastModified());
-      configApplyTimeMap.put(configFileName, currentTimeMillis);
-      return true;
-    }
-    return currentTimeMillis < configApplyTimeMap.get(configFileName) + applyTimeoutMillis;
   }
 }

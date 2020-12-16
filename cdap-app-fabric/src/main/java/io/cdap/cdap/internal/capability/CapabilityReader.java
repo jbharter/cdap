@@ -21,6 +21,7 @@ import io.cdap.cdap.proto.id.ApplicationId;
 import io.cdap.cdap.proto.id.NamespaceId;
 
 import java.io.IOException;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /**
@@ -45,6 +46,32 @@ public interface CapabilityReader {
    * @throws IOException
    */
   boolean isEnabled(String capability) throws IOException;
+
+  /**
+   * Get the configuration for this capability if present
+   *
+   * @param capability
+   * @return
+   * @throws IOException
+   */
+  @Nullable
+  CapabilityConfig getConfig(String capability) throws IOException;
+
+  /**
+   * Returns all the capabilities
+   *
+   * @return
+   * @throws IOException
+   */
+  List<CapabilityStatusRecord> getAllCapabilities() throws IOException;
+
+  /**
+   * Returns all the capability operations
+   *
+   * @return
+   * @throws IOException
+   */
+  List<CapabilityOperationRecord> getCapabilityOperations() throws IOException;
 
   /**
    * Return applications that is associated with the capability

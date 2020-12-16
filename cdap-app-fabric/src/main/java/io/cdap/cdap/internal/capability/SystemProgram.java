@@ -18,6 +18,7 @@ package io.cdap.cdap.internal.capability;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -86,5 +87,27 @@ public class SystemProgram {
       return Collections.emptyMap();
     }
     return args;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (other == null || getClass() != other.getClass()) {
+      return false;
+    }
+    SystemProgram program = (SystemProgram) other;
+    return Objects.equals(namespace, program.namespace) &&
+      Objects.equals(application, program.application) &&
+      Objects.equals(type, program.type) &&
+      Objects.equals(name, program.name) &&
+      Objects.equals(version, program.version) &&
+      Objects.equals(args, program.args);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(namespace, application, type, name, version, args);
   }
 }

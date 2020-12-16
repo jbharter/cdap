@@ -40,6 +40,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,7 +78,9 @@ public class CapabilityReaderTest extends AppFabricTestBase {
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
     String appNameWithCapabilities = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
     for (String capability : declaredAnnotation.capabilities()) {
-      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+      CapabilityConfig capabilityConfig = new CapabilityConfig("Enable", CapabilityStatus.ENABLED.name(), capability,
+                                                               Collections.emptyList(), Collections.emptyList());
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED, capabilityConfig);
     }
     deployArtifactAndApp(appWithWorkflowClass, appNameWithCapabilities);
 
@@ -126,7 +129,11 @@ public class CapabilityReaderTest extends AppFabricTestBase {
     Assert.assertTrue(declaredAnnotation.capabilities().length > 0);
     String appNameWithCapability1 = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();
     for (String capability : declaredAnnotation.capabilities()) {
-      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED,
+                                             new CapabilityConfig("Enable", CapabilityStatus.ENABLED.name(),
+                                                                  appNameWithCapability1,
+                                                                  Collections
+                                                                    .emptyList(), Collections.emptyList()));
     }
     deployArtifactAndApp(appWithWorkflowClass, appNameWithCapability1);
     String appNameWithCapability2 = appWithWorkflowClass.getSimpleName() + UUID.randomUUID();

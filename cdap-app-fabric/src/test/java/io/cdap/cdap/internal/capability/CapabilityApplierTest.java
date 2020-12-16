@@ -109,7 +109,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     Assert.assertTrue(capabilityReader.isEnabled(capability));
 
     //disable capability. Program should stop, status should be disabled and app should still be present.
-    CapabilityConfig disabledConfig = changeConfigAction(config, CapabilityActionType.DISABLE);
+    CapabilityConfig disabledConfig = changeConfigStatus(config, CapabilityStatus.DISABLED);
     capabilityApplier.apply(Collections.singletonList(disabledConfig));
     assertProgramRuns(programId, ProgramRunStatus.KILLED, 1);
     assertProgramRuns(programId, ProgramRunStatus.RUNNING, 0);
@@ -118,8 +118,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     Assert.assertFalse(appList.isEmpty());
 
     //delete capability. Program should stop, status should be disabled and app should still be present.
-    CapabilityConfig deletedConfig = changeConfigAction(config, CapabilityActionType.DELETE);
-    capabilityApplier.apply(Collections.singletonList(deletedConfig));
+    capabilityApplier.apply(Collections.emptyList());
     Assert.assertNull(capabilityReader.getStatus(capability));
     appList = getAppList(namespace);
     Assert.assertTrue(appList.isEmpty());
@@ -137,7 +136,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     deployTestArtifact(namespace, appName, version, appClass);
 
     //enable a capability with no system apps and programs
-    CapabilityConfig enabledConfig = new CapabilityConfig("Enable healthcare", CapabilityActionType.ENABLE.name(),
+    CapabilityConfig enabledConfig = new CapabilityConfig("Enable healthcare", CapabilityStatus.ENABLED.name(),
                                                           "healthcare", Collections.emptyList(),
                                                           Collections.emptyList());
     capabilityApplier.apply(Collections.singletonList(enabledConfig));
@@ -162,7 +161,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     Assert.assertFalse(appList.isEmpty());
 
     //disable the capability -  the program that was started should stop
-    CapabilityConfig disabledConfig = new CapabilityConfig("Disable healthcare", CapabilityActionType.DISABLE.name(),
+    CapabilityConfig disabledConfig = new CapabilityConfig("Disable healthcare", CapabilityStatus.DISABLED.name(),
                                                            "healthcare", Collections.emptyList(),
                                                            Collections.emptyList());
     capabilityApplier.apply(Collections.singletonList(disabledConfig));
@@ -179,11 +178,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     }
     Assert.assertTrue(getAppList(namespace).isEmpty());
 
-    //delete the capability
-    CapabilityConfig deleteConfig = new CapabilityConfig("Delete healthcare", CapabilityActionType.DELETE.name(),
-                                                         "healthcare", Collections.emptyList(),
-                                                         Collections.emptyList());
-    capabilityApplier.apply(Collections.singletonList(deleteConfig));
+    capabilityApplier.apply(Collections.emptyList());
     Assert.assertNull(capabilityReader.getStatus(capability));
     appList = getAppList(namespace);
     Assert.assertTrue(appList.isEmpty());
@@ -220,7 +215,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
 
     //enable the capabilities
     List<CapabilityConfig> capabilityConfigs = Arrays.stream(declaredAnnotation.capabilities())
-      .map(capability -> new CapabilityConfig("Test capability", CapabilityActionType.ENABLE.name(), capability,
+      .map(capability -> new CapabilityConfig("Test capability", CapabilityStatus.ENABLED.name(), capability,
                                               Collections.emptyList(), Collections.emptyList()))
       .collect(Collectors.toList());
     capabilityApplier.apply(capabilityConfigs);
@@ -245,7 +240,7 @@ public class CapabilityApplierTest extends AppFabricTestBase {
                                               appNameWithOutCapability, TEST_VERSION));
   }
 
-  private CapabilityConfig changeConfigAction(CapabilityConfig original, CapabilityActionType type) {
+  private CapabilityConfig changeConfigStatus(CapabilityConfig original, CapabilityStatus type) {
     return new CapabilityConfig(original.getLabel(), type.name(), original.getCapability(), original.getApplications(),
                                 original.getPrograms());
   }
@@ -257,13 +252,12 @@ public class CapabilityApplierTest extends AppFabricTestBase {
     String namespace = NamespaceId.SYSTEM.getNamespace();
     String label = "Enable capability";
     String capability = "test";
-    CapabilityActionType type = CapabilityActionType.ENABLE;
     ArtifactSummary artifactSummary = new ArtifactSummary(appName, version, ArtifactScope.SYSTEM);
     SystemApplication application = new SystemApplication(namespace, appName, version, artifactSummary, null);
     SystemProgram program = new SystemProgram(namespace, appName, ProgramType.SERVICE.name(),
                                               programName, version, null);
-    return new CapabilityConfig(label, type.name(), capability, Collections.singletonList(application),
-                                Collections.singletonList(program));
+    return new CapabilityConfig(label, CapabilityStatus.ENABLED.name(), capability,
+                                Collections.singletonList(application), Collections.singletonList(program));
   }
 
   private void deployArtifactAndApp(Class<?> applicationClass, String appName) throws Exception {

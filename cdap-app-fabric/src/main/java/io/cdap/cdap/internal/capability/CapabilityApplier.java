@@ -42,7 +42,6 @@ import io.cdap.cdap.security.spi.authorization.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Class that applies capabilities
@@ -86,39 +86,138 @@ public class CapabilityApplier {
   /**
    * Applies the given capability configurations
    *
-   * @param
+   * @param capabilityConfigs
    */
   public void apply(List<CapabilityConfig> capabilityConfigs) throws Exception {
-    refreshCapabilities(new ArrayList<>(capabilityConfigs));
-  }
-
-  private void refreshCapabilities(List<CapabilityConfig> capabilityConfigs) throws Exception {
-    //collect all programs to be enabled
-    Map<ProgramId, Arguments> enabledPrograms = new HashMap<>();
-    Set<String> enabledCapabilities = new HashSet<>();
-    for (CapabilityConfig config : capabilityConfigs) {
-      String capability = config.getCapability();
-      LOG.debug("Applying {} action for capability {}", config.getType(), capability);
-      switch (config.getType()) {
-        case ENABLE:
-          deployAllApps(capability, config.getApplications());
-          config.getPrograms().forEach(systemProgram -> enabledPrograms
-            .put(getProgramId(systemProgram), new BasicArguments(systemProgram.getArgs())));
-          enabledCapabilities.add(capability);
+    List<CapabilityConfig> newConfigs = new ArrayList<>(capabilityConfigs);
+    Set<CapabilityConfig> enableSet = new HashSet<>();
+    Set<CapabilityConfig> disableSet = new HashSet<>();
+    Set<CapabilityConfig> deleteSet = new HashSet<>();
+    Map<String, CapabilityStatusRecord> currentCapabilities = capabilityReader.getAllCapabilities().stream().collect(
+      Collectors.toMap(CapabilityStatusRecord::getCapability, capabilityStatusRecord -> capabilityStatusRecord));
+    Map<String, CapabilityOperationRecord> currentOperations = capabilityReader.getCapabilityOperations().stream()
+      .collect(Collectors.toMap(CapabilityOperationRecord::getCapability,
+                                capabilityOperationRecord -> capabilityOperationRecord));
+    for (CapabilityConfig newConfig : newConfigs) {
+      String capability = newConfig.getCapability();
+      if (currentOperations.containsKey(capability)) {
+        LOG.debug("Capability {} config for status {} skipped because there is already an operation {} in progress.",
+                  capability, newConfig.getStatus(), currentOperations.get(capability).getActionType());
+        continue;
+      }
+      switch (newConfig.getStatus()) {
+        case ENABLED:
+          enableSet.add(newConfig);
           break;
-        case DISABLE:
-          disableCapability(capability);
-          break;
-        case DELETE:
-          deleteCapability(config);
+        case DISABLED:
+          disableSet.add(newConfig);
           break;
         default:
-          LOG.error("Unknown capability action {} ", config.getType());
           break;
       }
+      currentCapabilities.remove(capability);
     }
+    //add all unfinished operations to retry
+    for (CapabilityOperationRecord operationRecord : currentOperations.values()) {
+      switch (operationRecord.getActionType()) {
+        case ENABLE:
+          enableSet.add(operationRecord.getCapabilityConfig());
+          break;
+        case DISABLE:
+          disableSet.add(operationRecord.getCapabilityConfig());
+          break;
+        case DELETE:
+          deleteSet.add(operationRecord.getCapabilityConfig());
+          break;
+        default:
+          break;
+      }
+      currentCapabilities.remove(operationRecord.getCapability());
+    }
+    // find the ones that are not being applied or retried - these should be removed
+    deleteSet.addAll(currentCapabilities.values().stream()
+                       .map(CapabilityStatusRecord::getCapabilityConfig).collect(Collectors.toSet()));
+    enableCapabilities(enableSet);
+    disableCapabilities(disableSet);
+    deleteCapabilities(deleteSet);
+  }
+
+  private void enableCapabilities(Set<CapabilityConfig> enableSet) throws Exception {
+    Map<ProgramId, Arguments> enabledPrograms = new HashMap<>();
+    for (CapabilityConfig capabilityConfig : enableSet) {
+      //collect the enabled programs
+      capabilityConfig.getPrograms().forEach(systemProgram -> enabledPrograms
+        .put(getProgramId(systemProgram), new BasicArguments(systemProgram.getArgs())));
+      String capability = capabilityConfig.getCapability();
+      CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
+      if (capabilityConfig.equals(existingConfig)) {
+        continue;
+      }
+      capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.ENABLE, capabilityConfig);
+      LOG.debug("Enabling capability {}", capability);
+      //If already deployed, will be ignored
+      deployAllSystemApps(capability, capabilityConfig.getApplications());
+    }
+    //start all programs
     systemProgramManagementService.setProgramsEnabled(enabledPrograms);
-    enableAllCapabilities(enabledCapabilities);
+    //mark all as enabled
+    for (CapabilityConfig capabilityConfig : enableSet) {
+      String capability = capabilityConfig.getCapability();
+      capabilityWriter
+        .addOrUpdateCapability(capability, CapabilityStatus.ENABLED, capabilityConfig);
+      capabilityWriter.deleteCapabilityOperation(capability);
+      LOG.debug("Enabled capability {}", capability);
+    }
+  }
+
+  private void disableCapabilities(Set<CapabilityConfig> disableSet) throws Exception {
+    for (CapabilityConfig capabilityConfig : disableSet) {
+      String capability = capabilityConfig.getCapability();
+      CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
+      if (capabilityConfig.equals(existingConfig)) {
+        continue;
+      }
+      capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.DISABLE, capabilityConfig);
+      LOG.debug("Disabling capability {}", capability);
+      capabilityWriter
+        .addOrUpdateCapability(capabilityConfig.getCapability(), CapabilityStatus.DISABLED, capabilityConfig);
+      //stop all the programs having capability metadata. Services will be stopped by SystemProgramManagementService
+      stopAllProgramsWithMetadata(capability);
+      capabilityWriter.deleteCapabilityOperation(capability);
+      LOG.debug("Disabled capability {}", capability);
+    }
+  }
+
+  private void deleteCapabilities(Set<CapabilityConfig> deleteSet) throws Exception {
+    for (CapabilityConfig capabilityConfig : deleteSet) {
+      String capability = capabilityConfig.getCapability();
+      CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
+      //already deleted
+      if (existingConfig == null) {
+        continue;
+      }
+      capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.DELETE, capabilityConfig);
+      LOG.debug("Deleting capability {}", capability);
+      if (existingConfig.getStatus() == CapabilityStatus.ENABLED) {
+        //stop all the programs having capability metadata.
+        stopAllProgramsWithMetadata(capability);
+      }
+      //remove all applications having capability metadata.
+      deleteAllAppsWithMetadata(capability);
+      //remove deployments of system applications
+      for (SystemApplication application : capabilityConfig.getApplications()) {
+        ApplicationId applicationId = getApplicationId(application);
+        deleteAppWithRetry(applicationId);
+      }
+      capabilityWriter.deleteCapability(capability);
+      capabilityWriter.deleteCapabilityOperation(capability);
+      LOG.debug("Deleted capability {}", capability);
+    }
+  }
+
+  private ApplicationId getApplicationId(SystemApplication application) {
+    String version = application.getVersion() == null ? ApplicationId.DEFAULT_VERSION : application.getVersion();
+    return new ApplicationId(application.getNamespace(), application.getName(), version);
   }
 
   private ProgramId getProgramId(SystemProgram program) {
@@ -127,73 +226,26 @@ public class CapabilityApplier {
     return new ProgramId(applicationId, ProgramType.valueOf(program.getType().toUpperCase()), program.getName());
   }
 
-  private void enableAllCapabilities(Set<String> enabledCapabilities) throws IOException {
-    for (String capability : enabledCapabilities) {
-      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
-      LOG.debug("Capability {} enabled.", capability);
-    }
+  private void deleteAllAppsWithMetadata(String capability) throws Exception {
+    doForAllAppsWithMetadata(capability, this::deleteAppWithRetry);
   }
 
-  private void disableCapability(String capability) throws IOException {
-    //mark as disabled to prevent further runs
-    capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.DISABLED);
-    //stop programs
-    try {
-      stopAllPrograms(capability);
-    } catch (Exception ex) {
-      LOG.error("Stopping programs failed for capability {} with exception.", capability, ex);
-    }
-    //programs(services) will be stopped by SystemProgramManagementService
-    LOG.debug("Capability {} disabled.", capability);
+  private void stopAllProgramsWithMetadata(String capability) throws Exception {
+    doForAllAppsWithMetadata(capability, this::stopAllRunningProgramsForApp);
   }
 
-  private void deleteCapability(CapabilityConfig capabilityConfig) throws IOException {
-    String capability = capabilityConfig.getCapability();
-    if (capabilityReader.isEnabled(capability)) {
-      LOG.error("Deleting capability {} failed. Capability should be disabled before deleting.", capability);
-      return;
-    }
-    //delete programs
-    try {
-      deleteAllApps(capability);
-    } catch (Exception ex) {
-      LOG.error("Deleting programs failed for capability {} with exception.", capability, ex);
-    }
-    //delete applications
-    for (SystemApplication application : capabilityConfig.getApplications()) {
-      ApplicationId applicationId = new ApplicationId(application.getNamespace(), application.getName(),
-                                                      application.getVersion());
-      try {
-        applicationLifecycleService.removeApplication(applicationId);
-      } catch (Exception exception) {
-        LOG.error("Deleting application {} failed with exception.", applicationId, exception);
-      }
-    }
-    capabilityWriter.deleteCapability(capability);
-    LOG.debug("Capability {} deleted.", capability);
-  }
-
-  private void deleteAllApps(String capability) throws Exception {
-    doForAllApps(capability, this::deleteAppWithRetry);
-  }
-
-  private void stopAllPrograms(String capability) throws Exception {
-    doForAllApps(capability, this::stopAllPrograms);
-  }
-
-  private void deployAllApps(String capability, List<SystemApplication> applications) throws Exception {
+  private void deployAllSystemApps(String capability, List<SystemApplication> applications) throws Exception {
     if (applications.isEmpty()) {
       LOG.debug("Capability {} do not have apps associated with it", capability);
       return;
     }
     for (SystemApplication application : applications) {
-      doWithRetry(application, this::deployApp);
+      doWithRetry(application, this::retryableDeployApp);
     }
   }
 
-  private void deployApp(SystemApplication application) throws Exception {
-    String version = application.getVersion() == null ? ApplicationId.DEFAULT_VERSION : application.getVersion();
-    ApplicationId applicationId = new ApplicationId(application.getNamespace(), application.getName(), version);
+  private void retryableDeployApp(SystemApplication application) throws Exception {
+    ApplicationId applicationId = getApplicationId(application);
     LOG.debug("Deploying app {}", applicationId);
     try {
       if (isAppDeployed(applicationId)) {
@@ -221,7 +273,7 @@ public class CapabilityApplier {
   }
 
   //Find all applications for capability and call consumer for each
-  private void doForAllApps(String capability, CheckedConsumer<ApplicationId> consumer) throws Exception {
+  private void doForAllAppsWithMetadata(String capability, CheckedConsumer<ApplicationId> consumer) throws Exception {
     for (NamespaceMeta namespaceMeta : namespaceAdmin.list()) {
       int offset = 0;
       int limit = 100;
@@ -239,15 +291,15 @@ public class CapabilityApplier {
     }
   }
 
-  private void stopAllPrograms(ApplicationId applicationId) {
+  private void stopAllRunningProgramsForApp(ApplicationId applicationId) {
     try {
-      doWithRetry(applicationId, this::stopPrograms);
+      doWithRetry(applicationId, this::retryableStopRunningPrograms);
     } catch (Exception ex) {
       LOG.error("Stopping programs for application {} failed with {}", applicationId, ex);
     }
   }
 
-  private void stopPrograms(ApplicationId applicationId) throws Exception {
+  private void retryableStopRunningPrograms(ApplicationId applicationId) throws Exception {
     try {
       programLifecycleService.stopAll(applicationId);
     } catch (Exception ex) {
@@ -257,10 +309,10 @@ public class CapabilityApplier {
   }
 
   private void deleteAppWithRetry(ApplicationId applicationId) throws Exception {
-    doWithRetry(applicationId, this::deleteApp);
+    doWithRetry(applicationId, this::retryableDeleteApp);
   }
 
-  private void deleteApp(ApplicationId applicationId) throws Exception {
+  private void retryableDeleteApp(ApplicationId applicationId) throws Exception {
     try {
       applicationLifecycleService.removeApplication(applicationId);
     } catch (Exception ex) {
@@ -286,6 +338,7 @@ public class CapabilityApplier {
 
   /**
    * Consumer functional interface that can throw exception
+   *
    * @param <T>
    */
   @FunctionalInterface

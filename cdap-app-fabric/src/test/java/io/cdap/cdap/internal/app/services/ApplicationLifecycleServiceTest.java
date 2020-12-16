@@ -39,6 +39,7 @@ import io.cdap.cdap.internal.app.deploy.ProgramTerminator;
 import io.cdap.cdap.internal.app.deploy.Specifications;
 import io.cdap.cdap.internal.app.runtime.artifact.ArtifactRepository;
 import io.cdap.cdap.internal.app.services.http.AppFabricTestBase;
+import io.cdap.cdap.internal.capability.CapabilityConfig;
 import io.cdap.cdap.internal.capability.CapabilityNotAvailableException;
 import io.cdap.cdap.internal.capability.CapabilityStatus;
 import io.cdap.cdap.internal.capability.CapabilityWriter;
@@ -71,6 +72,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -180,7 +182,9 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
       //expected
     }
     for (String capability : declaredAnnotation.capabilities()) {
-      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED);
+      CapabilityConfig capabilityConfig =  new CapabilityConfig("Test", capability, CapabilityStatus.ENABLED.name(),
+                                                                Collections.emptyList(), Collections.emptyList());
+      capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED, capabilityConfig);
     }
     applicationLifecycleService
       .deployAppAndArtifact(NamespaceId.DEFAULT, appWithWorkflowClass.getSimpleName(), artifactId, appJarFile, null,

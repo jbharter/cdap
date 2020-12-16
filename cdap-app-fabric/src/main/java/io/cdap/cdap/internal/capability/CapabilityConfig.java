@@ -18,6 +18,7 @@ package io.cdap.cdap.internal.capability;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -26,15 +27,15 @@ import javax.annotation.Nullable;
 public class CapabilityConfig {
 
   private final String label;
-  private final CapabilityActionType type;
+  private final CapabilityStatus status;
   private final String capability;
   private final List<SystemApplication> applications;
   private final List<SystemProgram> programs;
 
-  public CapabilityConfig(String label, String type, String capability, @Nullable List<SystemApplication> applications,
-                          @Nullable List<SystemProgram> programs) {
+  public CapabilityConfig(String label, String status, String capability,
+                          @Nullable List<SystemApplication> applications, @Nullable List<SystemProgram> programs) {
     this.label = label;
-    this.type = CapabilityActionType.valueOf(type);
+    this.status = CapabilityStatus.valueOf(status);
     this.capability = capability;
     this.applications = (applications == null) ? Collections.emptyList() : applications;
     this.programs = (programs == null) ? Collections.emptyList() : programs;
@@ -48,10 +49,10 @@ public class CapabilityConfig {
   }
 
   /**
-   * @return {@link CapabilityActionType}
+   * @return {@link CapabilityAction}
    */
-  public CapabilityActionType getType() {
-    return type;
+  public CapabilityStatus getStatus() {
+    return status;
   }
 
   /**
@@ -79,5 +80,26 @@ public class CapabilityConfig {
       return Collections.emptyList();
     }
     return programs;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (other == null || getClass() != other.getClass()) {
+      return false;
+    }
+    CapabilityConfig otherConfig = (CapabilityConfig) other;
+    return Objects.equals(label, otherConfig.label) &&
+      status == otherConfig.status &&
+      Objects.equals(capability, otherConfig.capability) &&
+      Objects.equals(applications, otherConfig.applications) &&
+      Objects.equals(programs, otherConfig.programs);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(label, status, capability, applications, programs);
   }
 }

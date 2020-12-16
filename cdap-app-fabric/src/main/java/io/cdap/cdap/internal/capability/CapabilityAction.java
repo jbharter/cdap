@@ -19,7 +19,7 @@ package io.cdap.cdap.internal.capability;
 /**
  * Action types possible for a capability
  */
-public enum CapabilityActionType {
+public enum CapabilityAction {
 
   ENABLE, DISABLE, DELETE
 

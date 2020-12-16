@@ -16,15 +16,17 @@
 
 package io.cdap.cdap.internal.app.preview;
 
-import io.cdap.cdap.internal.capability.CapabilityNotAvailableException;
+import io.cdap.cdap.internal.capability.CapabilityConfig;
+import io.cdap.cdap.internal.capability.CapabilityOperationRecord;
 import io.cdap.cdap.internal.capability.CapabilityReader;
 import io.cdap.cdap.internal.capability.CapabilityStatus;
+import io.cdap.cdap.internal.capability.CapabilityStatusRecord;
 import io.cdap.cdap.internal.entity.EntityResult;
 import io.cdap.cdap.proto.id.ApplicationId;
 import io.cdap.cdap.proto.id.NamespaceId;
 
-import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /**
@@ -32,24 +34,38 @@ import javax.annotation.Nullable;
  */
 public class NoopCapabilityReader implements CapabilityReader {
   @Override
-  public CapabilityStatus getStatus(String capability) throws IOException {
+  public CapabilityStatus getStatus(String capability) {
     return CapabilityStatus.ENABLED;
   }
 
   @Override
-  public boolean isEnabled(String capability) throws IOException {
+  public boolean isEnabled(String capability) {
     return true;
   }
 
   @Override
+  public CapabilityConfig getConfig(String capability) {
+    return null;
+  }
+
+  @Override
+  public List<CapabilityStatusRecord> getAllCapabilities() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<CapabilityOperationRecord> getCapabilityOperations() {
+    return Collections.emptyList();
+  }
+
+  @Override
   public EntityResult<ApplicationId> getApplications(NamespaceId namespace, String capability, @Nullable String cursor,
-                                                     int offset, int limit) throws IOException {
+                                                     int offset, int limit) {
     return new EntityResult<>(Collections.emptyList(), null, 0, 0, 0);
   }
 
   @Override
-  public void ensureApplicationEnabled(String namespace, String appNameWithCapability)
-    throws IOException, CapabilityNotAvailableException {
-
+  public void ensureApplicationEnabled(String namespace, String appNameWithCapability) {
+    //no-op
   }
 }

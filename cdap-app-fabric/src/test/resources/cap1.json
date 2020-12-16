@@ -1,6 +1,6 @@
 {
   "label": "Enable test capability",
-  "type": "ENABLE",
+  "status": "ENABLED",
   "capability": "cap1",
   "applications": [
     {
