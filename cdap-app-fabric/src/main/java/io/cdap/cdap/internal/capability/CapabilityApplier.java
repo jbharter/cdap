@@ -151,6 +151,7 @@ public class CapabilityApplier {
       String capability = capabilityConfig.getCapability();
       CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
       if (capabilityConfig.equals(existingConfig)) {
+        capabilityWriter.deleteCapabilityOperation(capability);
         continue;
       }
       capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.ENABLE, capabilityConfig);
@@ -175,6 +176,7 @@ public class CapabilityApplier {
       String capability = capabilityConfig.getCapability();
       CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
       if (capabilityConfig.equals(existingConfig)) {
+        capabilityWriter.deleteCapabilityOperation(capability);
         continue;
       }
       capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.DISABLE, capabilityConfig);
@@ -194,6 +196,7 @@ public class CapabilityApplier {
       CapabilityConfig existingConfig = capabilityReader.getConfig(capability);
       //already deleted
       if (existingConfig == null) {
+        capabilityWriter.deleteCapabilityOperation(capability);
         continue;
       }
       capabilityWriter.addOrUpdateCapabilityOperation(capability, CapabilityAction.DELETE, capabilityConfig);

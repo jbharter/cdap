@@ -182,8 +182,8 @@ public class ApplicationLifecycleServiceTest extends AppFabricTestBase {
       //expected
     }
     for (String capability : declaredAnnotation.capabilities()) {
-      CapabilityConfig capabilityConfig =  new CapabilityConfig("Test", capability, CapabilityStatus.ENABLED.name(),
-                                                                Collections.emptyList(), Collections.emptyList());
+      CapabilityConfig capabilityConfig = new CapabilityConfig("Test", CapabilityStatus.ENABLED.name(), capability,
+                                                               Collections.emptyList(), Collections.emptyList());
       capabilityWriter.addOrUpdateCapability(capability, CapabilityStatus.ENABLED, capabilityConfig);
     }
     applicationLifecycleService
